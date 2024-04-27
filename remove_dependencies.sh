@@ -2,7 +2,7 @@
 
 # Remove package dependencies virtualbox-7.0 and vagrant
 echo "Removing package dependencies for the cluster..."
-apt-get remove -y virtualbox-7.0 vagrant > /dev/null
+apt-get remove -y virtualbox-7.0 vagrant
 
 # auto remove dependencies
 echo "Auto removing dependencies..."

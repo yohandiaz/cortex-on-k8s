@@ -21,7 +21,7 @@ else
 
     # Importing Oracle public keys
     echo "Importing Oracle public keys..."
-    wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | gpg --yes --dearmor -o /usr/share/keyrings/oracle-virtualbox-2016.gpg 
+    wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | gpg --yes --dearmor -o /usr/share/keyrings/oracle-virtualbox-2016.gpg
 
     # Adding VirtualBox APT Repository
     echo "Adding VirtualBox APT Repository..."
@@ -34,7 +34,7 @@ else
 
     # Install VirtualBox package
     echo "Installing VirtualBox package ..."
-    apt-get install -y virtualbox-7.0 > /dev/null
+    apt-get install -y virtualbox-7.0
 
     # Check for errors in installation
     if [ $? -eq 0 ]; then
@@ -57,11 +57,12 @@ else
 
     # Adding HashiCorp APT Repository
     echo "Adding HashiCorp APT Repository..."
-    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
 
     # Installing vagrant package
     echo "Installing Vagrant package..."
-    sudo apt update && sudo apt-get install -y vagrant > /dev/null
+    apt-get update -y
+    apt-get install -y vagrant
 
     # Check for errors in installation
     if [ $? -eq 0 ]; then
