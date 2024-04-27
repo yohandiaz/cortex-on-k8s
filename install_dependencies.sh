@@ -34,7 +34,7 @@ else
 
     # Install VirtualBox package
     echo "Installing VirtualBox package ..."
-    apt-get install -y virtualbox-7.0
+    apt-get install -y virtualbox
 
     # Check for errors in installation
     if [ $? -eq 0 ]; then
