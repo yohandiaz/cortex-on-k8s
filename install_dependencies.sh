@@ -27,11 +27,33 @@ apt-get update -y
 
 # Install VirtualBox package
 echo "Installing VirtualBox package ..."
-apt install -y virtualbox-7.0 > /dev/null
+apt-get install -y virtualbox-7.0 > /dev/null
 
 # Check for errors in installation
 if [ $? -eq 0 ]; then
     echo "VirtualBox installed successfully!"
 else
     echo "Failed to install VirtualBox. Check for errors above."
+fi
+
+# Install Vagrant
+echo "Installing Vagrant..."
+
+# Importing HashiCorp public keys
+echo "Importing HashiCorp public keys..."
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+# Adding HashiCorp APT Repository
+echo "Adding HashiCorp APT Repository..."
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+# Installing vagrant package
+echo "Installing Vagrant package..."
+sudo apt update && sudo apt install vagrant > /dev/null
+
+# Check for errors in installation
+if [ $? -eq 0 ]; then
+    echo "Vagrant installed successfully!"
+else
+    echo "Failed to install Vagrant. Check for errors above."
 fi
