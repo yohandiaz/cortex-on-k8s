@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set the environment to noninteractive to suppress prompts
+export DEBIAN_FRONTEND=noninteractive
+
 # Update system available packages
 echo "Updating available packages..."
 apt-get update -y
