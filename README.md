@@ -25,11 +25,62 @@ The package dependencies for this setup are Vagrant and VirtualBox. In this case
 
 Three installation methods are going to be provided to install these dependencies: Automated installation, Step by Step commands or following the official documentation guides.
 
-### Automated installation
+### Official documentation
+
+VirtualBox installation guide: [VirtualBox](https://www.virtualbox.org/wiki/Linux_Downloads)
+Vagrant installation guide: [Vagrant](https://developer.hashicorp.com/vagrant/downloads)
+
+### Automated installation (Ubuntu/Debian)
 
 To follow this installation process clone the repository, change your working directory to it and run the following command:
 
 ```bash
-    sudo bash install_dependencies.sh
+    cd cortex-on-minikube
+    sudo ./ install_dependencies.sh
 ```
+
+### Step by step (Ubuntu/Debian)
+
+#### Installing VirtualBox:
+
+```bash
+
+    # Update system available packages
+    sudo apt update -y
+
+    # Importing Oracle public keys
+    wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | \
+       sudo gpg --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg --dearmor
+
+    # Adding VirtualBox APT Repository
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | \
+        sudo tee -a /etc/apt/sources.list.d/virtualbox.list
+
+    # Update system available packages
+    sudo apt update -y
+
+    # Install VirtualBox package
+    sudo apt install -y virtualbox
+```
+
+#### Installing Vagrant:
+
+```bash
+
+    # Update system available packages
+    sudo apt update -y
+
+    # Importing Hashicorp public keys
+    wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+    # Adding Hashicorp APT Repository
+    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+    # Installing Vagrant package
+    sudo apt update && sudo apt install vagrant
+```
+
+Now you have the prerequisites installed.
+
+## Getting Started
 
