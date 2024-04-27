@@ -50,7 +50,7 @@ else
 
     # Importing HashiCorp public keys
     echo "Importing HashiCorp public keys..."
-    wget -y -O- https://apt.releases.hashicorp.com/gpg | gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    wget -O- https://apt.releases.hashicorp.com/gpg | gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 
     # Adding HashiCorp APT Repository
     echo "Adding HashiCorp APT Repository..."
