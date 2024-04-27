@@ -11,7 +11,6 @@ apt-get install -y lsb-release wget gnupg2
 # Check virtualbox isn't already installed
 if [ -x "$(command -v virtualbox)" ]; then
     echo "VirtualBox is already installed. Skipping installation..."
-    exit 0
 else
     echo "VirtualBox is not installed. Proceeding with installation..."
     # Install VirtualBox
@@ -19,8 +18,7 @@ else
 
     # Importing Oracle public keys
     echo "Importing Oracle public keys..."
-    wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | \
-    gpg --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg --dearmor
+    wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | gpg --yes --dearmor -o /usr/share/keyrings/oracle-virtualbox-2016.gpg 
 
     # Adding VirtualBox APT Repository
     echo "Adding VirtualBox APT Repository..."
@@ -46,14 +44,13 @@ fi
 # Check vagrant isn't already installed
 if [ -x "$(command -v vagrant)" ]; then
     echo "Vagrant is already installed. Skipping installation..."
-    exit 0
 else
     # Install Vagrant
     echo "Installing Vagrant..."
 
     # Importing HashiCorp public keys
     echo "Importing HashiCorp public keys..."
-    wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    wget -y -O- https://apt.releases.hashicorp.com/gpg | gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 
     # Adding HashiCorp APT Repository
     echo "Adding HashiCorp APT Repository..."
@@ -61,7 +58,7 @@ else
 
     # Installing vagrant package
     echo "Installing Vagrant package..."
-    sudo apt update && sudo apt install vagrant > /dev/null
+    sudo apt update && sudo apt-get install -y vagrant > /dev/null
 
     # Check for errors in installation
     if [ $? -eq 0 ]; then
@@ -69,4 +66,11 @@ else
     else
         echo "Failed to install Vagrant. Check for errors above."
     fi
-    fi
+fi
+
+# Check virtualbox and vagrant are working
+if [ -x "$(command -v virtualbox)" ] && [ -x "$(command -v vagrant)" ]; then
+    echo "VirtualBox and Vagrant are installed and working correctly!"
+else
+    echo "VirtualBox and Vagrant are not installed or not working correctly. Check for errors above."
+fi
