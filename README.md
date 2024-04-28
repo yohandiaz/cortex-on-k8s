@@ -36,7 +36,7 @@ To follow this installation process clone the repository, change your working di
 
 ```bash
     cd cortex-on-minikube
-    sudo ./ install_dependencies.sh
+    sudo ./install_dependencies.sh
 ```
 
 ### Step by step (Ubuntu/Debian)
