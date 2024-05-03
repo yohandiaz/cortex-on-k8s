@@ -2,79 +2,113 @@
 
 # Set the environment to noninteractive to suppress prompts
 export DEBIAN_FRONTEND=noninteractive
+export PATH=$PATH:/usr/local/bin
 
-# Update system available packages
-echo "Updating available packages..."
-apt-get update -y
+# Install packages
+apt-get install -y curl
 
-# Install package dependencies
-echo "Installing package dependencies for the script..."
-apt-get install -y lsb-release wget gnupg2
+# Check kubectl isn't already installed
+if [[ ! -x "$(command -v kubectl)" ]]; then
+    echo "Kubectl is not installed. Proceeding with installation..."
+    # Install Kubectl
+    echo "Installing Kubectl..."
 
-# Check virtualbox isn't already installed
-if [ -x "$(command -v virtualbox)" ]; then
-    echo "VirtualBox is already installed. Skipping installation..."
-else
-    echo "VirtualBox is not installed. Proceeding with installation..."
-    # Install VirtualBox
-    echo "Installing VirtualBox..."
-
-    # Importing Oracle public keys
-    echo "Importing Oracle public keys..."
-    wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | gpg --yes --dearmor -o /usr/share/keyrings/oracle-virtualbox-2016.gpg
-
-    # Adding VirtualBox APT Repository
-    echo "Adding VirtualBox APT Repository..."
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | \
-    tee -a /etc/apt/sources.list.d/virtualbox.list
-
-    # Update system available packages
-    echo "Updating available packages..."
-    apt-get update -y
-
-    # Install VirtualBox package
-    echo "Installing VirtualBox package ..."
-    apt-get install -y virtualbox
+    # Download and Install Kubectl
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && rm kubectl
 
     # Check for errors in installation
-    if [ $? -eq 0 ]; then
-        echo "VirtualBox installed successfully!"
+    if [[ $? -eq 0 && -x $(command -v kubectl) ]]; then
+        echo "Kubectl installed successfully!"
     else
-        echo "Failed to install VirtualBox. Check for errors above."
+        echo "Failed to install Kubectl. Check for errors above. Exiting..."
+        exit 1
     fi
+else
+    echo "Kubectl is already installed. Skipping installation..."
 fi
 
-# Check vagrant isn't already installed
-if [ -x "$(command -v vagrant)" ]; then
-    echo "Vagrant is already installed. Skipping installation..."
-else
-    # Install Vagrant
-    echo "Installing Vagrant..."
+# Check minikube isn't already installed
+if [[ ! -x "$(command -v minikube)" ]]; then
+    # Install minikube
+    echo "Installing minikube..."
 
-    # Importing HashiCorp public keys
-    echo "Importing HashiCorp public keys..."
-    wget -O- https://apt.releases.hashicorp.com/gpg | gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-
-    # Adding HashiCorp APT Repository
-    echo "Adding HashiCorp APT Repository..."
-    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
-
-    # Installing vagrant package
-    echo "Installing Vagrant package..."
-    apt-get update -y
-    apt-get install -y vagrant
+    # Download and Install Minikube
+    curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
 
     # Check for errors in installation
-    if [ $? -eq 0 ]; then
-        echo "Vagrant installed successfully!"
+    if [[ $? -eq 0 && -x $(command -v minikube) ]]; then
+        echo "Minikube installed successfully!"
     else
-        echo "Failed to install Vagrant. Check for errors above."
+        echo "Failed to install Minikube. Check for errors above. Exiting..."
+        exit 1
     fi
+else
+    echo "minikube is already installed. Skipping installation..."
 fi
 
-# Check virtualbox and vagrant are working
-if [ -x "$(command -v virtualbox)" ] && [ -x "$(command -v vagrant)" ]; then
-    echo "VirtualBox and Vagrant are installed and working correctly!"
+# Check docker isn't already installed
+if [[ ! -x "$(command -v docker)" ]]; then
+    # Install Docker
+    echo "Installing Docker.."
+    # Uninstall old conflicting packages
+    for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do apt-get remove $pkg; done
+
+    # Add Docker's official GPG key
+    apt-get update
+    apt-get install -y ca-certificates
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+
+    # Add the repository to Apt sources
+    echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update
+
+    # Install the latest docker version
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    # Check for errors in installation
+    if [[ $? -eq 0 && -x $(command -v docker) ]]; then
+        echo "Docker installed successfully!"
+    else
+        echo "Failed to install Docker. Check for errors above. Exiting..."
+        exit 1
+    fi
 else
-    echo "VirtualBox and Vagrant are not installed or not working correctly. Check for errors above."
+    echo "Docker is already installed. Skipping installation..."
 fi
+
+# Check helm isn't already installed
+if [[ ! -x "$(command -v helm)" ]]; then
+    # Install Helm
+    echo "Installing Helm..."
+
+    # Download and Install Helm
+    curl -LO https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz
+    tar -zxvf helm-v3.14.4-linux-amd64.tar.gz
+    mv linux-amd64/helm /usr/local/bin/helm
+
+    # Cleanup the downloaded files
+    rm -rf linux-amd64 helm-v3.14.4-linux-amd64.tar.gz
+
+    # Check for errors in installation
+    if [[ $? -eq 0 && -x $(command -v helm) ]]; then
+        echo "Helm installed successfully!"
+    else
+        echo "Failed to install Helm. Check for errors above. Exiting..."
+        exit 1
+    fi
+else
+    echo "Helm is already installed. Skipping installation..."
+fi
+
+# Dependencies installed successfully message in green
+echo -e "\033[1;32mDependencies installed successfully!\033[0m"
+
+# Tell the user to make sure to add /usr/local/bin to their PATH
+echo -e "\033[1;33mIMPORTANT: To be able to use this dependencies make sure to add /usr/local/bin to your PATH by running:\033[0m \033[1;32mexport PATH=\$PATH:/usr/local/bin\033[0m"

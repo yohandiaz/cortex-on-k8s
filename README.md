@@ -1,86 +1,224 @@
-# Cortex on Kubernetes with Minikube and Vagrant
+![cortex_banner](./repo_banner.png)
 
-This project sets up a Cortex analysis platform on a 3-node Kubernetes cluster using Minikube with Vagrant and VirtualBox. Cortex serves as a powerful analysis and management tool for security researchers, coupled with Elasticsearch as its backend for data storage.
+# Cortex Deployment on Minikube
+
+This guide will walk you through deploying the Cortex analysis platform along with Elasticsearch on a local single node Minikube cluster.
 
 ## Prerequisites
 
-Before you start, make sure you have the following installed on your system:
+Before starting, ensure you have the following tools installed on your system:
 
-- **Ubuntu/Debian System**: The installation steps for the dependencies were followed in an Ubuntu 22.04 system, these steps would need to be done following the official documentation guide for the installation in another distribution families.
-- **System resources**: You will need a system with at least 8GB of RAM and a 4-core CPU to handle the resources required by the cluster and its applications effectively.
+For a smooth operation of Cortex and Elasticsearch on Minikube, the following minimum system resources are recommended:
 
-## Choice of Vagrant and VirtualBox
+- **CPU**: At least 2 CPU cores available available to assign to the Minikube cluste.
+- **Memory**: At least 4 GB of RAM available to assign to the Minikube cluster.
+- **Disk Space**: At least 30 GB of free disk space for the Minikube cluster.
 
-We have opted to use Vagrant with VirtualBox instead of directly installing Minikube on the host for the following reasons:
+### Package dependencies
 
-- **Consistency**: Vagrant ensures that all developers work within an identical environment, mitigating "works on my machine" issues.
-- **Isolation**: This approach avoids conflicts between development dependencies and personal software on the host system.
-- **Simplicity and Portability**: Using Vagrant and VirtualBox simplifies the setup process across different operating systems and enhances portability, making it easier for any developer to get started without complex configuration.
+- **Minikube**: [Installation Guide](https://minikube.sigs.k8s.io/docs/start/)
+  - We will use the Docker driver, but other [Drivers](https://minikube.sigs.k8s.io/docs/drivers/) are also supported.
+- **Kubectl**: [Installation Guide for Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+- **Docker**: [Installation Guide](https://docs.docker.com/engine/install/)
+- **Helm**: [Installation Guide](https://helm.sh/docs/intro/install/)
 
-This setup strategy helps to create a more stable and predictable development environment that mirrors production settings as closely as possible.
+## Automated Prerequisites Installation (Ubuntu/Debian)
 
-## Installation Steps for dependencies
+To automate the installation of the prerequisites, you can use the provided script. Remember to review scripts before executing them:
 
-The package dependencies for this setup are Vagrant and VirtualBox. In this case, VirtualBox has been chosen over other possibilities such as KVM due to the simplicity and compatibility that VirtualBox offers. KVM would offer greater performance, but it requires kernel virtualization capability, which is not available in all development environments.
-
-Three installation methods are going to be provided to install these dependencies: Automated installation, Step by Step commands or following the official documentation guides.
-
-### Official documentation
-
-VirtualBox installation guide: [VirtualBox](https://www.virtualbox.org/wiki/Linux_Downloads)
-Vagrant installation guide: [Vagrant](https://developer.hashicorp.com/vagrant/downloads)
-
-### Automated installation (Ubuntu/Debian)
-
-To follow this installation process clone the repository, change your working directory to it and run the following command:
+Change the working directory to the repository:
 
 ```bash
-    cd cortex-on-minikube
-    sudo ./ install_dependencies.sh
+cd cortex-on-minikube
 ```
 
-### Step by step (Ubuntu/Debian)
-
-#### Installing VirtualBox:
+Execute the automated installation script:
 
 ```bash
-
-    # Update system available packages
-    sudo apt update -y
-
-    # Importing Oracle public keys
-    wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | \
-       sudo gpg --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg --dearmor
-
-    # Adding VirtualBox APT Repository
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | \
-        sudo tee -a /etc/apt/sources.list.d/virtualbox.list
-
-    # Update system available packages
-    sudo apt update -y
-
-    # Install VirtualBox package
-    sudo apt install -y virtualbox
+sudo ./install_dependencies.sh
 ```
 
-#### Installing Vagrant:
+## Manual Installation Steps (Ubuntu/Debian)
+
+If you prefer manual installation or have not used the automated script, follow these steps:
+
+### Installing Kubectl:
+
+```bash
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && rm kubectl
+```
+
+### Installing Minikube:
+
+```bash
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+```
+
+### Installing Docker:
 
 ```bash
 
-    # Update system available packages
-    sudo apt update -y
+# Uninstall old conflicting packages
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
 
-    # Importing Hashicorp public keys
-    wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+# Add Docker's official GPG key
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-    # Adding Hashicorp APT Repository
-    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+# Add the repository to Apt sources
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
 
-    # Installing Vagrant package
-    sudo apt update && sudo apt install vagrant
+# Install the latest docker version
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-Now you have the prerequisites installed.
+### Installing Helm:
+
+```bash
+curl -LO https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz
+tar -zxvf helm-v3.14.4-linux-amd64.tar.gz
+sudo mv linux-amd64/helm /usr/local/bin/helm
+
+# Cleanup the downloaded files
+rm -rf linux-amd64 helm-v3.14.4-linux-amd64.tar.gz
+```
 
 ## Getting Started
 
+### Start Minikube
+
+Start your Minikube cluster using Docker as the driver and allocate sufficient resources:
+
+```bash
+minikube start --driver=docker --cpus 2 --memory 4096 --addons=ingress
+```
+
+You may have an error regarding the user permission to use Docker when running this command, this is solved by running the command:
+
+```bash
+sudo usermod -aG docker $USER && newgrp docker
+```
+
+Then you will need to run the minikube start command again.
+
+### Deploying Cortex
+
+#### Deploying Prometheus and Grafana for monitoring (Optional)
+
+If you want to deploy the monitoring services Prometheus and Grafana you will need to set the variable monitoring.enabled to true in the cortex-chart/values.yaml file before deploying the Cortex chart. It should look like this:
+
+```yaml
+monitoring:
+  enabled: true # Set to true if you want to deploy Prometheus and Grafana
+```
+
+#### Deploying the Cortex chart
+
+To deploy the Cortex chart you will first need to build the Helm dependencies:
+
+```bash
+helm dependency build cortex-chart
+```
+
+Then deploy the Cortex Platform by running:
+
+```bash
+helm install cortex cortex-chart
+```
+
+Check the deployment in the namespace cortex, it can take around 2 to 3 minutes to be fully deployed:
+
+```bash
+kubectl get all -n cortex
+```
+
+### Accessing Cortex
+
+After ensuring that all the elements are fully deployed, access Cortex using the following steps:
+
+Get the Cortex status by running:
+
+```bash
+curl "http://$(minikube ip)/api/status"
+```
+
+For direct browser access, navigate to ```http://<minikube-ip>``` in your web browser.
+
+You can get the minikube ip by running this command:
+
+```bash
+minikube ip
+```
+
+### Accessing Grafana
+
+For browser access, navigate to ```http://<minikube-ip>:3000``` in your web browser.
+
+Default credentials:
+
+**username**: admin
+***password***: admin
+
+Go to Dashboards to view monitoring stats
+
+### Kubectl Port Forwarding for Cortex (Optional)
+
+If you are accessing from a different machine, you can set up a Kubectl port forwarding to be able to access from the exterior:
+
+```bash
+sudo kubectl port-forward --kubeconfig=/home/$USER/.kube/config -n ingress-nginx --address 0.0.0.0 services/ingress-nginx-controller 80:80
+```
+
+Navigate to ```http://<machine-ip>``` in your web browser to access the Cortex platform.
+
+For further steps in the configuration process of Cortex you can follow the official documentation: [First Start](https://docs.strangebee.com/cortex/user-guides/first-start/)
+
+### Kubectl Port Forwarding for Grafana (Optional)
+
+```bash
+sudo kubectl port-forward --kubeconfig=/home/$USER/.kube/config -n default --address 0.0.0.0 service/cortex-grafana 3000:80
+```
+
+Navigate to ```http://<machine-ip>:3000``` in your web browser to access Grafana.
+
+Default credentials:
+
+**username**: admin
+***password***: admin
+
+Go to Dashboards to view monitoring stats
+
+## Uninstalling
+
+### Uninstall Cortex deployment
+
+To remove the Cortex deployment from your Minikube cluster, use the following Helm command:
+
+```bash
+helm uninstall cortex
+```
+
+### Stop Minikube
+
+Once you have uninstalled the deployment, you can stop Minikube:
+
+```bash
+minikube stop
+```
+
+### Remove Dependencies (Optional)
+
+If you want to remove all installed dependencies (Docker, Kubectl, Helm, and Minikube), you can run the provided script. Remember to carefully review each script before executing to ensure it performs actions that are safe and intended for your environment.
+
+```bash
+sudo ./remove_dependencies.sh
+```

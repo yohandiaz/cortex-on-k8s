@@ -1,25 +1,43 @@
 #!/bin/bash
 
-# Remove package dependencies virtualbox-7.0 and vagrant
+# This script removes Docker, Minikube and Kubectl from the system, ask user for confirmation before proceeding
+read -p "Are you sure you want to remove Docker, Minikube, Helm, Kubectl? (yes/no): " answer
+if [[ "$answer" == "yes" || "$answer" == "y" ]]; then
+    echo "Proceeding with removal..."
+else
+    echo "Aborting..."
+    exit 0
+fi
+
+# Remove Minikube, Kubectl and Helm binaries
+echo "Removing Minikube, Kubectl and Helm binaries..."
+rm /usr/local/bin/minikube /usr/local/bin/kubectl /usr/local/bin/helm
+
+# Remove Minikube and Kubectl directories
+#echo "Removing Minikube and Kubectl directories..."
+#rm -rf ~/.minikube ~/.kube
+
+# Remove package dependencies
 echo "Removing package dependencies for the cluster..."
-apt-get remove -y virtualbox-7.0 vagrant
+apt-get remove -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # auto remove dependencies
 echo "Auto removing dependencies..."
 apt-get autoremove -y
 
-# Remove VirtualBox and Vagrant APT repositories
-echo "Removing VirtualBox and Vagrant APT repositories..."
-rm /etc/apt/sources.list.d/virtualbox.list /etc/apt/sources.list.d/hashicorp.list
+# Remove Docker APT repository
+echo "Removing Docker APT repository..."
+rm /etc/apt/sources.list.d/docker.list
 
-# Remove Oracle and HashiCorp public keys
-echo "Removing Oracle and HashiCorp public keys..."
-rm /usr/share/keyrings/oracle-virtualbox-2016.gpg /usr/share/keyrings/hashicorp-archive-keyring.gpg
+# Remove Docker public keys
+echo "Removing Docker public key..."
+rm /etc/apt/keyrings/docker.asc
 
-# Check vagrant and virtualbox are removed
-if [ -x "$(command -v vagrant)" ] || [ -x "$(command -v virtualbox)" ]; then
-    echo "Failed to remove Vagrant or/and VirtualBox. Check for errors above."
+# Check docker, minikube and kubectl are removed
+if [[ -x "$(command -v docker)" || -x "$(command -v kubectl)" || -x "$(command -v minikube)" || -x "$(command -v helm)" ]]; then
+    # Echo error message in red
+    echo -e "\033[1;31mFailed to remove dependencies. Check for errors above. Exiting...\033[0m"
 else
-    echo "Vagrant and VirtualBox removed successfully!"
+    # Echo success message in green
+    echo -e "\033[1;32mDependencies removed successfully!\033[0m"
 fi
-

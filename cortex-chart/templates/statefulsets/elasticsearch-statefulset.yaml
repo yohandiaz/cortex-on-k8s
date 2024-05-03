@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.elasticsearch.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  serviceName: {{ .Values.elasticsearch.name }}
+  replicas: {{ .Values.elasticsearch.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.elasticsearch.matchLabels.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.elasticsearch.matchLabels.app }}
+    spec:
+      initContainers:
+        - name: {{ .Values.elasticsearch.initContainers.name }}
+          image: {{ .Values.elasticsearch.initContainers.image }}
+          command:
+            {{- toYaml .Values.elasticsearch.initContainers.command | nindent 12 }}
+          volumeMounts:
+            {{ toYaml .Values.elasticsearch.volumeMounts | nindent 12 }}
+      containers:
+      - name: {{ .Values.elasticsearch.name }}
+        image: {{ .Values.elasticsearch.image }}
+        ports:
+        - containerPort: {{ .Values.elasticsearch.port }}
+        resources:
+          {{- toYaml .Values.elasticsearch.resources | nindent 12 }}
+        envFrom:
+        - configMapRef:
+            name: elasticsearch-config
+        volumeMounts:
+          {{ toYaml .Values.elasticsearch.volumeMounts | nindent 12 }}
+        livenessProbe:
+          {{- toYaml .Values.elasticsearch.livenessProbe | nindent 12 }}
+        readinessProbe:
+          {{- toYaml .Values.elasticsearch.readinessProbe | nindent 12 }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Values.elasticsearch.volumeClaimTemplates.name }}
+    spec:
+      accessModes: {{ .Values.elasticsearch.volumeClaimTemplates.accessModes }}
+      resources:
+        requests:
+          storage: "{{ .Values.elasticsearch.volumeClaimTemplates.storage }}"
+      storageClassName: {{ .Values.elasticsearch.volumeClaimTemplates.storageClassName }}
